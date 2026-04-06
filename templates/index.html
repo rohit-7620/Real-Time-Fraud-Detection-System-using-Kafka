@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fraud Stream Monitor</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="bg-grid"></div>
+    <main class="shell">
+      <header class="hero">
+        <p class="eyebrow">Real-Time Intelligence</p>
+        <h1>Fraud Stream Monitor</h1>
+        <p class="sub">Live transaction pipeline with risk alerts powered by Kafka.</p>
+      </header>
+
+      <section class="stats">
+        <article class="card stat reveal">
+          <h2>Total Transactions</h2>
+          <p id="tx-count">0</p>
+        </article>
+        <article class="card stat reveal delay-1">
+          <h2>Total Alerts</h2>
+          <p id="alert-count">0</p>
+        </article>
+        <article class="card stat reveal delay-2">
+          <h2>Alert Rate</h2>
+          <p id="alert-rate">0%</p>
+        </article>
+      </section>
+
+      <section class="feed-wrap reveal delay-2">
+        <div class="feed-header">
+          <h2>Live Event Feed</h2>
+          <span class="live-dot">LIVE</span>
+        </div>
+        <div id="feed" class="feed"></div>
+      </section>
+    </main>
+
+    <script>
+      const txCountEl = document.getElementById("tx-count");
+      const alertCountEl = document.getElementById("alert-count");
+      const alertRateEl = document.getElementById("alert-rate");
+      const feedEl = document.getElementById("feed");
+
+      let txCount = 0;
+      let alertCount = 0;
+
+      const fmt = new Intl.DateTimeFormat("en-IN", {
+        dateStyle: "short",
+        timeStyle: "medium",
+      });
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function updateRate() {
+        if (txCount === 0) {
+          alertRateEl.textContent = "0%";
+          return;
+        }
+        const rate = ((alertCount / txCount) * 100).toFixed(2);
+        alertRateEl.textContent = `${rate}%`;
+      }
+
+      function renderEventRow(event) {
+        const isAlert = event.kind === "alert";
+        const ts = event.timestamp ? fmt.format(new Date(event.timestamp)) : "-";
+        const reasons = isAlert && event.reasons?.length
+          ? `<p class="meta">Reasons: ${escapeHtml(event.reasons.join(", "))}</p>`
+          : "";
+
+        return `
+          <article class="feed-item ${isAlert ? "alert" : "transaction"}">
+            <div class="line-1">
+              <span class="tag">${isAlert ? "ALERT" : "TX"}</span>
+              <span class="txn">Txn: ${escapeHtml(event.transaction_id || "N/A")}</span>
+              <span class="time">${escapeHtml(ts)}</span>
+            </div>
+            <div class="line-2">
+              <p>User ${escapeHtml(event.user_id || "N/A")} in ${escapeHtml(event.location || "Unknown")}</p>
+              <p class="amount">Amount: INR ${escapeHtml(event.amount || 0)}</p>
+              ${isAlert ? `<p class="score">Risk: ${escapeHtml(event.risk_score || 0)}</p>` : ""}
+            </div>
+            ${reasons}
+          </article>
+        `;
+      }
+
+      function prependEvent(event) {
+        feedEl.insertAdjacentHTML("afterbegin", renderEventRow(event));
+        while (feedEl.children.length > 50) {
+          feedEl.removeChild(feedEl.lastElementChild);
+        }
+      }
+
+      function applySnapshot(snapshot) {
+        txCount = snapshot.counts?.transactions || 0;
+        alertCount = snapshot.counts?.alerts || 0;
+        txCountEl.textContent = txCount;
+        alertCountEl.textContent = alertCount;
+        updateRate();
+
+        feedEl.innerHTML = "";
+        (snapshot.events || []).forEach((event) => {
+          feedEl.insertAdjacentHTML("beforeend", renderEventRow(event));
+        });
+      }
+
+      async function refreshFromState() {
+        try {
+          const res = await fetch("/state", { cache: "no-store" });
+          if (!res.ok) return;
+          const snapshot = await res.json();
+          if (snapshot.kind === "snapshot") {
+            applySnapshot(snapshot);
+          }
+        } catch (_) {
+          // Ignore polling errors and keep SSE connection as primary source.
+        }
+      }
+
+      const source = new EventSource("/stream");
+      source.onmessage = (message) => {
+        const payload = JSON.parse(message.data);
+
+        if (payload.kind === "snapshot") {
+          applySnapshot(payload);
+          return;
+        }
+
+        if (payload.kind === "transaction") {
+          txCount += 1;
+          txCountEl.textContent = txCount;
+        }
+
+        if (payload.kind === "alert") {
+          alertCount += 1;
+          alertCountEl.textContent = alertCount;
+        }
+
+        updateRate();
+        prependEvent(payload);
+      };
+
+      // Polling fallback keeps UI updated on environments where SSE can be buffered.
+      refreshFromState();
+      setInterval(refreshFromState, 2000);
+    </script>
+  </body>
+</html>

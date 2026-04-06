@@ -1,0 +1,232 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap");
+
+:root {
+  --bg-1: #0a1016;
+  --bg-2: #111a23;
+  --card: rgba(16, 27, 38, 0.78);
+  --card-border: rgba(133, 200, 255, 0.2);
+  --text: #f0f7ff;
+  --muted: #99a8b6;
+  --accent: #5be1b8;
+  --alert: #ff7b72;
+  --tx: #7cc5ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 12% 18%, #1d3042 0%, transparent 45%),
+    radial-gradient(circle at 78% 10%, #17301f 0%, transparent 38%),
+    linear-gradient(145deg, var(--bg-1), var(--bg-2));
+  overflow-x: hidden;
+}
+
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(circle at center, black 40%, transparent 95%);
+  pointer-events: none;
+}
+
+.shell {
+  width: min(1100px, 92vw);
+  margin: 28px auto;
+  position: relative;
+  z-index: 2;
+}
+
+.hero {
+  margin-bottom: 20px;
+  animation: rise 0.7s ease-out;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+h1 {
+  margin: 6px 0;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+}
+
+.sub {
+  margin: 0;
+  color: var(--muted);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card {
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  background: var(--card);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.stat {
+  padding: 14px;
+}
+
+.stat h2 {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.stat p {
+  margin: 8px 0 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: clamp(1.3rem, 2.2vw, 2rem);
+  color: var(--accent);
+}
+
+.feed-wrap {
+  padding: 14px;
+}
+
+.feed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.feed-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.live-dot {
+  font-size: 0.75rem;
+  color: #072019;
+  background: var(--accent);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 62vh;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.feed-item {
+  border-radius: 10px;
+  border-left: 4px solid var(--tx);
+  background: rgba(6, 13, 20, 0.74);
+  padding: 8px 10px;
+  animation: pulseIn 0.28s ease-out;
+}
+
+.feed-item.alert {
+  border-left-color: var(--alert);
+}
+
+.line-1 {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.tag {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--text);
+}
+
+.line-2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.line-2 p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.amount,
+.score {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.meta {
+  margin: 5px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: rise 0.45s ease-out forwards;
+}
+
+.delay-1 {
+  animation-delay: 0.12s;
+}
+
+.delay-2 {
+  animation-delay: 0.24s;
+}
+
+@keyframes rise {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 860px) {
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .feed {
+    max-height: 58vh;
+  }
+}
